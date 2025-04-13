@@ -1,10 +1,25 @@
 Full updated Telegram bot code with MongoDB (excluding logout)
 
-import re import pymongo from flask import Flask from pyrogram import Client, filters from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton from telethon import TelegramClient from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, AuthRestartError from telethon.sessions import StringSession from pyrogram.enums import ParseMode
+import re 
+import pymongo 
+from flask import Flask 
+from pyrogram import Client, filters 
+from pyrogram.types 
+import Message, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton 
+from telethon import TelegramClient 
+from telethon.errors 
+import SessionPasswordNeededError, PhoneCodeInvalidError, AuthRestartError 
+from telethon.sessions import StringSession 
+from pyrogram.enums import ParseMode
 
 --- CONFIGURATION ---
 
-API_ID = 29657994 API_HASH = "85f461c4f637911d79c65da1fc2bdd77" BOT_TOKEN = "YOUR_BOT_TOKEN" OWNER_USERNAME = "@Rishu1286" MONGO_URL = "mongodb://localhost:27017" DB_NAME = "cckiller_bot"
+API_ID = 29657994
+API_HASH = "85f461c4f637911d79c65da1fc2bdd77" 
+BOT_TOKEN = "YOUR_BOT_TOKEN" 
+OWNER_USERNAME = "@Rishu1286"
+MONGO_URL = "mongodb://localhost:27017"
+DB_NAME = "cckiller_bot"
 
 --- DATABASE ---
 
