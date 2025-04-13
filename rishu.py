@@ -18,7 +18,9 @@ MONGO_URL = "mongodb+srv://Krishna:pss968048@cluster0.4rfuzro.mongodb.net/?retry
 
 #MongoDB Setup
 
-mongo = MongoClient(MONGO_URL) db = mongo['cc_killer'] sessions_col = db['sessions']
+mongo = MongoClient(MONGO_URL) 
+db = mongo['cc_killer'] 
+sessions_col = db['sessions']
 
 user_data = {}
 
