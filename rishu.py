@@ -8,7 +8,7 @@ from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, A
 from telethon.sessions import StringSession 
 from pymongo import MongoClient
 
-Telegram API Credentials
+#Telegram API Credentials
 
 API_ID = 29657994 
 API_HASH = "85f461c4f637911d79c65da1fc2bdd77" 
@@ -16,7 +16,7 @@ BOT_TOKEN = "8009070392:AAF2e26nQnu49Z9Z8UHJFNOPivSGLMjzb-o"
 OWNER_USERNAME = "@Rishu1286" 
 MONGO_URL = "mongodb+srv://Krishna:pss968048@cluster0.4rfuzro.mongodb.net/?retryWrites=true&w=majority"
 
-MongoDB Setup
+#MongoDB Setup
 
 mongo = MongoClient(MONGO_URL) db = mongo['cc_killer'] sessions_col = db['sessions']
 
