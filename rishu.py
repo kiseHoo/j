@@ -1,8 +1,20 @@
-import re import asyncio from flask import Flask from pyrogram import Client, filters from pyrogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton from telethon import TelegramClient from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, AuthRestartError from telethon.sessions import StringSession from pymongo import MongoClient
+import re 
+import asyncio 
+from flask import Flask 
+from pyrogram import Client, filters 
+from pyrogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton 
+from telethon import TelegramClient 
+from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, AuthRestartError 
+from telethon.sessions import StringSession 
+from pymongo import MongoClient
 
 Telegram API Credentials
 
-API_ID = 29657994 API_HASH = "85f461c4f637911d79c65da1fc2bdd77" BOT_TOKEN = "7612843678:AAHDOH4rDEcoUJ44hlN8HaUn11-vVX6-gUg" OWNER_USERNAME = "@Rishu1286" MONGO_URL = "mongodb://localhost:27017"
+API_ID = 29657994 
+API_HASH = "85f461c4f637911d79c65da1fc2bdd77" 
+BOT_TOKEN = "8009070392:AAF2e26nQnu49Z9Z8UHJFNOPivSGLMjzb-o" 
+OWNER_USERNAME = "@Rishu1286" 
+MONGO_URL = "mongodb+srv://Krishna:pss968048@cluster0.4rfuzro.mongodb.net/?retryWrites=true&w=majority"
 
 MongoDB Setup
 
