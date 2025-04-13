@@ -24,7 +24,12 @@ sessions_col = db['sessions']
 
 user_data = {}
 
-app = Client("cc_killer_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN) flask_app = Flask(name)
+app = Client("cc_killer_bot",
+api_id=API_ID,
+api_hash=API_HASH, 
+bot_token=BOT_TOKEN)
+
+flask_app = Flask(name)
 
 @app.on_message(filters.command("start")) async def start(client, message: Message): keyboard = [[InlineKeyboardButton("Register", callback_data="register")]] markup = InlineKeyboardMarkup(keyboard) instructions = ( "ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ 《 ₡₡ кɪʟʟᴇʀ 》!\n\n" f"ʜᴇʏ {message.from_user.first_name}\n\n\n" "ʜᴇʀᴇ’ꜱ ʜᴏᴡ ʏᴏᴜ ᴄᴀɴ ɢᴇᴛ ꜱᴛᴀʀᴛᴇᴅ:: \n\n" " * ⌁ How it Works ! *\n\n\n" "ꜰᴇᴀᴛᴜʀᴇꜱ ⌁⌁\n" "[✓] /cu  [card_details] ⌁ ᴋɪʟʟ ᴄᴄ\n" "[✓] /b3  [card_details] ⌁  ᴄʜᴇᴄᴋ ᴄᴀʀᴅ \n" ) await message.reply_text(instructions, reply_markup=markup)
 
